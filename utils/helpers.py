@@ -1,4 +1,3 @@
-# Mapping relation keys to displayable icons and titles
 RELATION_MAP = {
     'dad': ('👨', 'Dad'),
     'mom': ('👩', 'Mom'),
@@ -22,7 +21,6 @@ RELATION_MAP = {
 }
 
 def format_tree_text(family_data):
-    """Formats the database rows into a beautiful ASCII card."""
     if not family_data:
         return "🍃 Your family tree is empty.\nReply to someone and use commands to start planting!"
     
