@@ -1,42 +1,98 @@
-import asyncio
-from pyrogram import Client, filters
-from database.db import get_family_tree
-from utils.helpers import format_tree_text
+from pyrogram import filters
+from pyrogram.handlers import MessageHandler
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-@Client.on_message(filters.command("familytree"))
-async def show_tree_cmd(client, message):
-    user_id = message.from_user.id
-    loading_msg = await message.reply("🔄 Fetching your roots...")
-    await asyncio.sleep(0.5)
-    await loading_msg.delete()
-    
-    family_data = get_family_tree(user_id)
-    tree_text = format_tree_text(family_data)
-    
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("🔄 Refresh", callback_data="show_tree"),
-            InlineKeyboardButton("❌ Close", callback_data="close_msg")
-        ]
-    ])
-    
-    await message.reply_text(tree_text, reply_markup=keyboard)
+from database.db import get_family_tree
 
-@Client.on_callback_query(filters.regex("^show_tree$"))
-async def show_tree_cb(client, callback_query):
-    user_id = callback_query.from_user.id
-    family_data = get_family_tree(user_id)
-    tree_text = format_tree_text(family_data)
-    
-    keyboard = InlineKeyboardMarkup([
+
+# Family tree command
+async def family_tree(client, message):
+
+    user_id = message.from_user.id
+
+    # Get family data
+    data = get_family_tree(user_id)
+
+    if not data:
+        await message.reply_text(
+            "🌳 Your family tree is empty.\n\n"
+            "Reply to users with commands like:\n"
+            "`/adddad`, `/addmom`, `/addwife`"
+        )
+        return
+
+    # Build text
+    text = "╔═══ 🌳 YOUR FAMILY TREE 🌳 ═══╗\n\n"
+
+    relations = {
+        "dad": "👨 Dad",
+        "mom": "👩 Mom",
+        "grandfather": "👴 Grandfather",
+        "grandmother": "👵 Grandmother",
+        "uncle": "🧔 Uncle",
+        "aunty": "👩 Aunty",
+        "bro": "🧑 Brother",
+        "sis": "👧 Sister",
+        "wife": "💍 Wife",
+        "gf": "❤️ Girlfriend",
+        "crush": "😍 Crush",
+        "friend": "🤝 Friend",
+        "enemy": "😈 Enemy",
+        "son": "👦 Son",
+        "daughter": "👧 Daughter",
+        "motherinlaw": "👵 Mother In Law",
+        "fatherinlaw": "👴 Father In Law",
+        "saali": "🙈 Saali",
+        "ziza": "😎 Ziza"
+    }
+
+    for key, title in relations.items():
+
+        if key in data:
+
+            username = data[key]["username"]
+
+            text += f"{title}\n"
+            text += f"└── @{username}\n\n"
+
+    text += "━━━━━━━━━━━━━━━\n👑 FamilyTree Bot"
+
+    # Buttons
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("🔄 Refresh", callback_data="show_tree"),
-            InlineKeyboardButton("❌ Close", callback_data="close_msg")
+            [
+                InlineKeyboardButton(
+                    "🔄 Refresh",
+                    callback_data="refresh_tree"
+                ),
+
+                InlineKeyboardButton(
+                    "❌ Close",
+                    callback_data="close_tree"
+                )
+            ]
         ]
-    ])
-    
-    try:
-        await callback_query.edit_message_text(tree_text, reply_markup=keyboard)
-    except Exception:
-        pass
+    )
+
+    await message.reply_text(
+        text,
+        reply_markup=keyboard
+    )
+
+
+# Close callback
+async def close_tree(client, callback_query):
+
+    await callback_query.message.delete()
+
+
+# Register handlers
+def register_handlers(app):
+
+    app.add_handler(
+        MessageHandler(
+            family_tree,
+            filters.command("familytree")
+        ),
+        group=0
+    )
