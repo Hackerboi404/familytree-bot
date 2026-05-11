@@ -33,6 +33,8 @@ def create_add_handler(command):
 
     async def handler(client, message):
 
+        print(f"COMMAND RECEIVED: {command}")
+
         # Ignore invalid users
         if not message.from_user:
             return
@@ -41,13 +43,15 @@ def create_add_handler(command):
 
         # Cooldown check
         if not check_cooldown(user_id):
+
             await message.reply_text(
                 "⏳ Please wait before using another command."
             )
             return
 
-        # Must reply to user
+        # Must reply to a user
         if not message.reply_to_message:
+
             await message.reply_text(
                 "⚠️ Reply to someone's message first."
             )
@@ -57,6 +61,7 @@ def create_add_handler(command):
 
         # Invalid user
         if not replied_user:
+
             await message.reply_text(
                 "⚠️ Invalid user."
             )
@@ -64,6 +69,7 @@ def create_add_handler(command):
 
         # Prevent bots
         if replied_user.is_bot:
+
             await message.reply_text(
                 "🤖 Bots cannot be added."
             )
@@ -71,6 +77,7 @@ def create_add_handler(command):
 
         # Prevent self add
         if replied_user.id == user_id:
+
             await message.reply_text(
                 "😂 You can't add yourself."
             )
@@ -79,18 +86,26 @@ def create_add_handler(command):
         # User data
         target_id = replied_user.id
         first_name = replied_user.first_name or "Unknown"
-        username = replied_user.username or "NoUsername"
 
+        # Username fix
+        if replied_user.username:
+            username = replied_user.username
+        else:
+            username = str(replied_user.id)
+
+        # Relation name
         relation_key = COMMAND_MAP[command]
 
         # Save relation
         add_relation(
             user_id=user_id,
-            relation=relation_key,
+            relation_type=relation_key,
             target_id=target_id,
             first_name=first_name,
             username=username
         )
+
+        print("RELATION SAVED")
 
         # Success message
         await message.reply_text(
@@ -107,22 +122,24 @@ def register_handlers(app):
 
     for cmd in COMMAND_MAP.keys():
 
+        print(f"REGISTERING: {cmd}")
+
         # Create function
         handler_func = create_add_handler(cmd)
 
-        # Proper command filter
+        # Create filter
         command_filter = filters.command(
             cmd,
             prefixes=["/"]
         )
 
-        # Create MessageHandler
+        # Create handler
         message_handler = MessageHandler(
             handler_func,
             command_filter
         )
 
-        # Register handler
+        # Register
         app.add_handler(
             message_handler,
             group=1
