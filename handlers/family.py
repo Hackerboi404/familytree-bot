@@ -1,16 +1,14 @@
+import asyncio
 from pyrogram import Client, filters
 from database.db import get_family_tree
 from utils.helpers import format_tree_text
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import time
 
 @Client.on_message(filters.command("familytree"))
 async def show_tree_cmd(client, message):
     user_id = message.from_user.id
-    
-    # Simulate "loading" for effect
     loading_msg = await message.reply("🔄 Fetching your roots...")
-    await asyncio.sleep(0.5) # Small delay for effect
+    await asyncio.sleep(0.5)
     await loading_msg.delete()
     
     family_data = get_family_tree(user_id)
@@ -41,7 +39,4 @@ async def show_tree_cb(client, callback_query):
     try:
         await callback_query.edit_message_text(tree_text, reply_markup=keyboard)
     except Exception:
-        pass # Ignore if message wasn't modified
-
-# Need to import asyncio for the delay
-import asyncio
+        pass
