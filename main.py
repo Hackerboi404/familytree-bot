@@ -16,10 +16,9 @@ keep_alive()
 # Initialize Database
 init_db()
 
-# Register Handlers
+# Register Dynamic Handlers (Add Relations)
 addrelations.register_handlers(app)
 
-# Start Bot
 print("Bot is running in Polling Mode...")
 app.run()
 idle()
