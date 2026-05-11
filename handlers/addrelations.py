@@ -1,7 +1,5 @@
-import asyncio
-from pyrogram import Client, filters
+from pyrogram import Client, filters, MessageHandler
 from database.db import add_relation
-from utils.decorators import is_reply
 from utils.cooldown import check_cooldown
 
 # Map commands to DB keys
@@ -28,6 +26,7 @@ COMMAND_MAP = {
 }
 
 def create_add_handler(command):
+    """Creates the callback function for a specific command."""
     async def handler(client, message):
         user_id = message.from_user.id
         
@@ -62,9 +61,17 @@ def create_add_handler(command):
     return handler
 
 def register_handlers(app):
+    """Registers all dynamic handlers to the app with a specific group."""
     for cmd, key in COMMAND_MAP.items():
-        # Create the handler logic
+        # 1. Get the logic function
         handler_func = create_add_handler(cmd)
         
-        # Register with specific group=1 to avoid sorting errors
-        app.add_handler(handler_func, filters.command(cmd), group=1)
+        # 2. Create the Filter object
+        command_filter = filters.command(cmd)
+        
+        # 3. Wrap in MessageHandler with group=1
+        # This fixes the "got multiple values for argument 'group'" error
+        message_handler = MessageHandler(handler_func, command_filter, group=1)
+        
+        # 4. Register the Handler object to the app
+        app.add_handler(message_handler)
