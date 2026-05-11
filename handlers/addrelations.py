@@ -31,13 +31,22 @@ def create_add_handler(command):
     async def handler(client, message):
         user_id = message.from_user.id
         
-        # Cooldown check
+        # Cooldown check (2 seconds)
         if not check_cooldown(user_id):
             return
 
-        # Get replied user
+        # Ensure we are replying to a user
+        if not message.reply_to_message:
+            await message.reply("⚠️ Please reply to a user's message to use this command.")
+            return
+
         replied_user = message.reply_to_message.from_user
         
+        # Prevent adding bots or deleted accounts
+        if replied_user.is_bot or replied_user.is_deleted:
+            await message.reply("⚠️ You cannot add bots or deleted accounts.")
+            return
+
         target_id = replied_user.id
         first_name = replied_user.first_name or "Unknown"
         username = replied_user.username or ""
@@ -52,17 +61,10 @@ def create_add_handler(command):
         
     return handler
 
-# Register all handlers dynamically
 def register_handlers(app):
     for cmd, key in COMMAND_MAP.items():
-        # Apply the is_reply decorator manually by wrapping the function
-        # Or simply check inside handler. Here we check inside handler logic via the wrapper
-        # To use our decorator cleanly:
+        # Create the handler logic
+        handler_func = create_add_handler(cmd)
         
-        raw_handler = create_add_handler(cmd)
-        
-        # We need to wrap it with is_reply
-        # Since decorators return functions, we assign the wrapped function
-        wrapped_handler = is_reply(raw_handler)
-        
-        app.add_handler(wrapped_handler, filters.command(cmd))
+        # Register with specific group=1 to avoid sorting errors
+        app.add_handler(handler_func, filters.command(cmd), group=1)
