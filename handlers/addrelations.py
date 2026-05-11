@@ -46,7 +46,7 @@ def create_add_handler(command):
             )
             return
 
-        # Must reply
+        # Must reply to user
         if not message.reply_to_message:
             await message.reply_text(
                 "⚠️ Reply to someone's message first."
@@ -110,10 +110,16 @@ def register_handlers(app):
         # Create function
         handler_func = create_add_handler(cmd)
 
+        # Proper command filter
+        command_filter = filters.command(
+            cmd,
+            prefixes=["/"]
+        )
+
         # Create MessageHandler
         message_handler = MessageHandler(
             handler_func,
-            filters.command(cmd)
+            command_filter
         )
 
         # Register handler
